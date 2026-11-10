@@ -6,18 +6,10 @@
   <title>V-Tube - Smart Video Platform</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS Client -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    :root {
-      --fb-blue: #1877F2;
-      --fb-bg: #F0F2F5;
-      --fb-card: #FFFFFF;
-      --fb-border: #CED0D4;
-    }
-    body { background-color: var(--fb-bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #F0F2F5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #f1f1f1; }
     ::-webkit-scrollbar-thumb { background: #bcc0c4; border-radius: 4px; }
@@ -27,9 +19,8 @@
 
   <!-- NAVBAR -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm px-4 lg:px-8 py-2.5 flex items-center justify-between">
-    <!-- Brand -->
     <div class="flex items-center gap-3">
-      <div onclick="filterCategory(event, 'ALL')" class="flex items-center gap-2 cursor-pointer group">
+      <div onclick="selectCategory('ALL')" class="flex items-center gap-2 cursor-pointer group">
         <div class="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white text-xl font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
           <i class="fa-solid fa-play ml-0.5"></i>
         </div>
@@ -42,75 +33,78 @@
 
     <!-- Category Pills -->
     <div id="category-pills" class="hidden md:flex items-center gap-1.5 bg-slate-100 p-1 rounded-full border border-slate-200 text-xs font-semibold">
-      <button onclick="filterCategory(event, 'ALL')" class="cat-pill bg-white text-[#1877F2] px-4 py-1.5 rounded-full shadow-sm transition" data-i18n="cat_all">All</button>
-      <button onclick="filterCategory(event, 'Education')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" data-i18n="cat_edu">Education</button>
-      <button onclick="filterCategory(event, 'Technology')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" data-i18n="cat_tech">Technology</button>
-      <button onclick="filterCategory(event, 'Entertainment')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" data-i18n="cat_ent">Entertainment</button>
-      <button onclick="filterCategory(event, 'Music')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" data-i18n="cat_music">Music</button>
+      <button onclick="selectCategory('ALL')" class="cat-pill bg-white text-[#1877F2] px-4 py-1.5 rounded-full shadow-sm transition" id="cat-all">All</button>
+      <button onclick="selectCategory('Education')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" id="cat-edu">Education</button>
+      <button onclick="selectCategory('Technology')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" id="cat-tech">Technology</button>
+      <button onclick="selectCategory('Entertainment')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" id="cat-ent">Entertainment</button>
+      <button onclick="selectCategory('Music')" class="cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition" id="cat-music">Music</button>
     </div>
 
-    <!-- Controls -->
+    <!-- Right Controls -->
     <div class="flex items-center gap-2.5">
-      <button onclick="toggleLanguage()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-full text-xs font-bold transition shadow-sm">
+      <button onclick="toggleLang()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-full text-xs font-bold transition shadow-sm">
         <i class="fa-solid fa-globe text-[#1877F2]"></i>
-        <span id="lang-label">हिन्दी</span>
+        <span id="lang-btn-text">हिन्दी</span>
       </button>
-      <div class="flex items-center gap-2" id="nav-actions"></div>
+
+      <div class="flex items-center gap-2" id="nav-user-actions">
+        <!-- Rendered by JS -->
+      </div>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
+  <!-- MAIN -->
   <main class="max-w-7xl mx-auto p-4 sm:p-6 w-full flex-1">
     
-    <!-- VIDEO PLAYER BOX -->
-    <div id="player-container" class="hidden mb-6 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+    <!-- VIDEO PLAYER -->
+    <div id="player-box" class="hidden mb-6 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
       <div class="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden bg-black shadow-lg">
-        <iframe id="main-player" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe id="main-iframe" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
       <div class="max-w-4xl mx-auto mt-4 flex justify-between items-start">
         <div>
-          <h1 id="player-title" class="text-xl font-bold text-slate-900"></h1>
-          <p id="player-desc" class="text-sm text-slate-500 mt-1 whitespace-pre-line"></p>
+          <h1 id="playing-title" class="text-xl font-bold text-slate-900"></h1>
+          <p id="playing-desc" class="text-sm text-slate-500 mt-1 whitespace-pre-line"></p>
         </div>
-        <button onclick="closePlayer()" class="text-slate-400 hover:text-slate-700 bg-slate-100 p-2 rounded-full transition" title="Close">
+        <button onclick="hidePlayer()" class="text-slate-400 hover:text-slate-700 bg-slate-100 p-2 rounded-full transition">
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
       </div>
     </div>
 
-    <!-- Personalized Recommendations -->
+    <!-- Interest Alert -->
     <div id="interest-banner" class="hidden mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-white border border-blue-100 shadow-sm flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-full bg-[#1877F2] text-white flex items-center justify-center text-sm shadow">
           <i class="fa-solid fa-wand-magic-sparkles"></i>
         </div>
         <div class="text-sm">
-          <span class="font-bold text-slate-900" data-i18n="personalized_feed">Personalized for you:</span>
-          <span id="user-interest-tags" class="text-[#1877F2] font-semibold ml-1"></span>
+          <span class="font-bold text-slate-900" id="lbl-rec-for-you">Recommended for you:</span>
+          <span id="interest-pills" class="text-[#1877F2] font-semibold ml-1"></span>
         </div>
       </div>
-      <button onclick="switchView('mine')" class="text-xs font-bold text-[#1877F2] hover:underline" data-i18n="view_my_uploads">View my uploads →</button>
+      <button onclick="changeView('mine')" class="text-xs font-bold text-[#1877F2] hover:underline" id="lbl-view-mine">View my uploads →</button>
     </div>
 
     <!-- Feed Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
-      <h2 id="feed-title" class="text-xl font-black text-slate-800" data-i18n="feed_heading">Recommended Videos</h2>
+      <h2 id="feed-heading-text" class="text-xl font-black text-slate-800">Recommended Videos</h2>
       
-      <div id="view-tabs" class="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl text-xs font-bold">
-        <button onclick="switchView('public')" id="tab-public" class="bg-white text-[#1877F2] px-4 py-1.5 rounded-lg shadow-sm transition" data-i18n="tab_explore">Explore (Public)</button>
-        <button onclick="switchView('mine')" id="tab-mine" class="hidden text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-lg transition" data-i18n="tab_my_videos">My Videos</button>
-        <button onclick="switchView('users_mgr')" id="tab-admin" class="hidden text-indigo-700 hover:bg-indigo-100 px-3.5 py-1.5 rounded-lg transition" data-i18n="tab_users_mgr">User Management</button>
+      <div class="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl text-xs font-bold">
+        <button onclick="changeView('public')" id="tab-public" class="bg-white text-[#1877F2] px-4 py-1.5 rounded-lg shadow-sm transition">Explore</button>
+        <button onclick="changeView('mine')" id="tab-mine" class="hidden text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-lg transition">My Videos</button>
+        <button onclick="changeView('admin')" id="tab-admin" class="hidden text-indigo-700 hover:bg-indigo-100 px-3.5 py-1.5 rounded-lg transition">User Management</button>
       </div>
     </div>
 
     <!-- Video Grid -->
-    <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+    <div id="grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
 
-    <!-- Admin Users Panel -->
-    <div id="admin-users-panel" class="hidden bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm mt-4">
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="hidden bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm mt-4">
       <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-        <h3 class="font-bold text-sm text-slate-800" data-i18n="registered_users">Registered Users Directory</h3>
-        <span id="total-users" class="text-xs font-semibold text-slate-500"></span>
+        <h3 class="font-bold text-sm text-slate-800" id="lbl-admin-dir">Registered Users Directory</h3>
+        <span id="admin-count" class="text-xs font-semibold text-slate-500"></span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-slate-600">
@@ -123,99 +117,99 @@
               <th class="p-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody id="users-table-body" class="divide-y divide-slate-100"></tbody>
+          <tbody id="admin-tbody" class="divide-y divide-slate-100"></tbody>
         </table>
       </div>
     </div>
   </main>
 
   <!-- MODAL: REGISTER -->
-  <div id="register-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div id="modal-register" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl">
       <div class="flex justify-between items-center mb-4">
         <div>
-          <h3 class="text-lg font-black text-slate-900" data-i18n="create_account_title">Create Account</h3>
-          <p class="text-xs text-slate-500" data-i18n="create_account_sub">It's quick and free to join V-Tube.</p>
+          <h3 class="text-lg font-black text-slate-900" id="m-reg-title">Create Account</h3>
+          <p class="text-xs text-slate-500" id="m-reg-sub">It's quick and free to join V-Tube.</p>
         </div>
-        <button onclick="closeModal('register-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <button onclick="hideModal('modal-register')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <form onsubmit="handleRegister(event)" class="space-y-3.5">
+      <form onsubmit="doRegister(event)" class="space-y-3.5">
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_name">Full Name / Channel Name</label>
-          <input id="reg-name" required type="text" placeholder="e.g. Ritesh Srivastava" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
+          <label class="text-xs font-bold text-slate-700" id="lbl-reg-name">Full Name / Channel Name</label>
+          <input id="form-name" required type="text" placeholder="e.g. Ritesh Srivastava" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_email">Email Address</label>
-          <input id="reg-email" required type="email" placeholder="name@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
+          <label class="text-xs font-bold text-slate-700" id="lbl-reg-email">Email Address</label>
+          <input id="form-email" required type="email" placeholder="name@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_password">Password</label>
-          <input id="reg-pass" required type="password" placeholder="At least 6 characters" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
+          <label class="text-xs font-bold text-slate-700" id="lbl-reg-pass">Password</label>
+          <input id="form-pass" required type="password" placeholder="At least 6 characters" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700 block mb-1.5" data-i18n="label_interests">Select Your Favorite Topics (at least one):</label>
+          <label class="text-xs font-bold text-slate-700 block mb-1.5" id="lbl-reg-fav">Select Your Favorite Topics:</label>
           <div class="grid grid-cols-2 gap-2 text-xs">
-            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="interest" value="Education" class="accent-[#1877F2]" checked> Education</label>
-            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="interest" value="Technology" class="accent-[#1877F2]"> Technology</label>
-            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="interest" value="Entertainment" class="accent-[#1877F2]"> Entertainment</label>
-            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="interest" value="Music" class="accent-[#1877F2]"> Music</label>
+            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="u_interest" value="Education" class="accent-[#1877F2]" checked> Education</label>
+            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="u_interest" value="Technology" class="accent-[#1877F2]"> Technology</label>
+            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="u_interest" value="Entertainment" class="accent-[#1877F2]"> Entertainment</label>
+            <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer font-medium hover:bg-slate-100"><input type="checkbox" name="u_interest" value="Music" class="accent-[#1877F2]"> Music</label>
           </div>
         </div>
-        <button type="submit" id="reg-btn" class="w-full bg-[#1877F2] hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-md shadow-blue-500/20" data-i18n="btn_register">Sign Up</button>
+        <button type="submit" id="btn-submit-reg" class="w-full bg-[#1877F2] hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-md shadow-blue-500/20">Sign Up</button>
       </form>
       <p class="text-xs text-slate-500 text-center mt-4">
-        <span data-i18n="already_have_acc">Already have an account?</span> <button onclick="switchToLogin()" class="text-[#1877F2] font-bold hover:underline" data-i18n="btn_login_link">Log In</button>
+        <span id="lbl-have-acc">Already have an account?</span> <button onclick="toLoginModal()" class="text-[#1877F2] font-bold hover:underline" id="lbl-to-login">Log In</button>
       </p>
     </div>
   </div>
 
   <!-- MODAL: LOGIN -->
-  <div id="login-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div id="modal-login" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
       <div class="flex justify-between items-center mb-4">
         <div>
-          <h3 class="text-lg font-black text-slate-900" data-i18n="login_title">Log In to V-Tube</h3>
-          <p class="text-xs text-slate-500" data-i18n="login_sub">Welcome back! Please enter your details.</p>
+          <h3 class="text-lg font-black text-slate-900" id="m-login-title">Log In to V-Tube</h3>
+          <p class="text-xs text-slate-500" id="m-login-sub">Welcome back! Please enter your details.</p>
         </div>
-        <button onclick="closeModal('login-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <button onclick="hideModal('modal-login')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <form onsubmit="handleLogin(event)" class="space-y-3.5">
+      <form onsubmit="doLogin(event)" class="space-y-3.5">
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_email">Email</label>
-          <input id="login-email" required type="email" placeholder="name@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
+          <label class="text-xs font-bold text-slate-700" id="lbl-login-email">Email</label>
+          <input id="login-email-input" required type="email" placeholder="name@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_password">Password</label>
-          <input id="login-pass" required type="password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
+          <label class="text-xs font-bold text-slate-700" id="lbl-login-pass">Password</label>
+          <input id="login-pass-input" required type="password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
         </div>
-        <button type="submit" id="login-btn" class="w-full bg-[#1877F2] hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-md shadow-blue-500/20" data-i18n="btn_signin">Sign In</button>
+        <button type="submit" id="btn-submit-login" class="w-full bg-[#1877F2] hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-md shadow-blue-500/20">Sign In</button>
       </form>
       <p class="text-xs text-slate-500 text-center mt-4">
-        <span data-i18n="need_new_acc">Need an account?</span> <button onclick="switchToRegister()" class="text-[#1877F2] font-bold hover:underline" data-i18n="btn_register_link">Create one</button>
+        <span id="lbl-need-acc">Need an account?</span> <button onclick="toRegModal()" class="text-[#1877F2] font-bold hover:underline" id="lbl-to-reg">Create one</button>
       </p>
     </div>
   </div>
 
-  <!-- MODAL: UPLOAD (Protected) -->
-  <div id="upload-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <!-- MODAL: UPLOAD -->
+  <div id="modal-upload" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900" data-i18n="upload_title">Upload New Video</h3>
-        <button onclick="closeModal('upload-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <h3 class="text-lg font-black text-slate-900" id="m-upload-title">Upload New Video</h3>
+        <button onclick="hideModal('modal-upload')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <form onsubmit="handleUpload(event)" class="space-y-3.5">
+      <form onsubmit="doUpload(event)" class="space-y-3.5">
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_vid_title">Video Title</label>
-          <input id="vid-title" required type="text" placeholder="e.g. Science Class Lecture 1" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
+          <label class="text-xs font-bold text-slate-700" id="lbl-up-title">Video Title</label>
+          <input id="up-title" required type="text" placeholder="e.g. Science Class Lecture 1" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_vid_url">YouTube Video URL or ID</label>
-          <input id="vid-url" required type="text" placeholder="https://youtu.be/... or video ID" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
+          <label class="text-xs font-bold text-slate-700" id="lbl-up-url">YouTube Video URL or ID</label>
+          <input id="up-url" required type="text" placeholder="https://youtu.be/... or ID" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs font-bold text-slate-700" data-i18n="label_category">Category</label>
-            <select id="vid-category" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none font-medium">
+            <label class="text-xs font-bold text-slate-700" id="lbl-up-cat">Category</label>
+            <select id="up-cat" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none font-medium">
               <option value="Education">Education</option>
               <option value="Technology">Technology</option>
               <option value="Entertainment">Entertainment</option>
@@ -224,332 +218,321 @@
             </select>
           </div>
           <div>
-            <label class="text-xs font-bold text-slate-700" data-i18n="label_visibility">Visibility</label>
-            <select id="vid-visibility" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none font-medium">
-              <option value="public" data-i18n="opt_public">🌐 Public (All)</option>
-              <option value="private" data-i18n="opt_private">🔒 Private (Only Me)</option>
+            <label class="text-xs font-bold text-slate-700" id="lbl-up-vis">Visibility</label>
+            <select id="up-vis" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none font-medium">
+              <option value="public" id="opt-pub">🌐 Public (All)</option>
+              <option value="private" id="opt-pri">🔒 Private (Only Me)</option>
             </select>
           </div>
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700" data-i18n="label_desc">Description</label>
-          <textarea id="vid-desc" rows="2" placeholder="Brief overview of the video content..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]"></textarea>
+          <label class="text-xs font-bold text-slate-700" id="lbl-up-desc">Description</label>
+          <textarea id="up-desc" rows="2" placeholder="Brief overview..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm mt-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2]"></textarea>
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <button type="button" onclick="closeModal('upload-modal')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800" data-i18n="btn_cancel">Cancel</button>
-          <button type="submit" id="save-vid-btn" class="bg-[#1877F2] hover:bg-blue-600 text-white font-bold px-5 py-2 rounded-xl text-sm transition shadow-md shadow-blue-500/20" data-i18n="btn_upload">Publish Video</button>
+          <button type="button" onclick="hideModal('modal-upload')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800" id="btn-up-cancel">Cancel</button>
+          <button type="submit" id="btn-submit-upload" class="bg-[#1877F2] hover:bg-blue-600 text-white font-bold px-5 py-2 rounded-xl text-sm transition shadow-md shadow-blue-500/20">Publish Video</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // 1. SUPABASE CREDENTIALS
-    const SUPABASE_URL = "https://gccvgzuimkxpfwpjpipd.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_vrmkCl4lnY7S6IchLKJn2g_7084yGwz";
+    // Configuration
+    const API_BASE = "https://gccvgzuimkxpfwpjpipd.supabase.co/rest/v1";
+    const API_KEY = "sb_publishable_vrmkCl4lnY7S6IchLKJn2g_7O84yGwz";
 
-    let supabase = null;
-    try {
-      if (window.supabase && SUPABASE_KEY && SUPABASE_KEY.length > 20) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      }
-    } catch (err) {
-      console.warn("Supabase init note:", err);
-    }
-
-    // 2. INTERNATIONALIZATION (i18n) DICTIONARY
-    const translations = {
+    // Multi-Language Strings
+    const i18n = {
       en: {
-        cat_all: "All",
-        cat_edu: "Education",
-        cat_tech: "Technology",
-        cat_ent: "Entertainment",
-        cat_music: "Music",
-        feed_heading: "Recommended Videos",
-        personalized_feed: "Personalized for you:",
-        view_my_uploads: "View my uploads →",
-        tab_explore: "Explore (Public)",
-        tab_my_videos: "My Videos",
-        tab_users_mgr: "User Management",
-        registered_users: "Registered Users Directory",
-        create_account_title: "Create Account",
-        create_account_sub: "It's quick and free to join V-Tube.",
-        label_name: "Full Name / Channel Name",
-        label_email: "Email Address",
-        label_password: "Password",
-        label_interests: "Select Your Favorite Topics:",
-        btn_register: "Sign Up",
-        already_have_acc: "Already have an account?",
-        btn_login_link: "Log In",
-        login_title: "Log In to V-Tube",
-        login_sub: "Welcome back! Please enter your details.",
-        btn_signin: "Sign In",
-        need_new_acc: "Need an account?",
-        btn_register_link: "Create one",
-        upload_title: "Upload New Video",
-        label_vid_title: "Video Title",
-        label_vid_url: "YouTube Video URL or ID",
-        label_category: "Category",
-        label_visibility: "Visibility",
-        opt_public: "🌐 Public (All)",
-        opt_private: "🔒 Private (Only Me)",
-        label_desc: "Description",
-        btn_cancel: "Cancel",
-        btn_upload: "Publish Video",
-        btn_login: "Log In",
-        btn_create_acc: "Create Account",
-        btn_upload_nav: "Upload",
-        no_videos_msg: "No videos found in this feed.",
+        all: "All", edu: "Education", tech: "Technology", ent: "Entertainment", music: "Music",
+        rec_feed: "Recommended Videos", rec_for_you: "Recommended for you:", view_mine: "View my uploads →",
+        tab_explore: "Explore", tab_my_videos: "My Videos", tab_admin: "User Management",
+        admin_dir: "Registered Users Directory",
+        reg_title: "Create Account", reg_sub: "It's quick and free to join V-Tube.",
+        name: "Full Name / Channel Name", email: "Email Address", pass: "Password",
+        fav_topics: "Select Your Favorite Topics:", signup: "Sign Up", have_acc: "Already have an account?",
+        login: "Log In", login_title: "Log In to V-Tube", login_sub: "Welcome back! Please enter your details.",
+        signin: "Sign In", need_acc: "Need an account?", create_one: "Create one",
+        up_title: "Upload New Video", vid_title: "Video Title", vid_url: "YouTube Video URL or ID",
+        cat: "Category", vis: "Visibility", pub: "🌐 Public (All)", pri: "🔒 Private (Only Me)",
+        desc: "Description", cancel: "Cancel", publish: "Publish Video", nav_upload: "Upload",
+        no_videos: "No videos found in this category.",
         confirm_logout: "Do you want to log out?",
         confirm_del_vid: "Are you sure you want to delete this video?",
-        confirm_del_user: "Warning: Deleting this user will also remove all their uploaded videos. Continue?"
+        confirm_del_user: "Warning: Deleting this user will remove all their data. Continue?"
       },
       hi: {
-        cat_all: "सभी",
-        cat_edu: "शिक्षा",
-        cat_tech: "तकनीक",
-        cat_ent: "मनोरंजन",
-        cat_music: "म्यूजिक",
-        feed_heading: "सिफारिशें (Recommended)",
-        personalized_feed: "आपके इंटरेस्ट के अनुसार फ़ीड:",
-        view_my_uploads: "मेरी अपलोड्स देखें →",
-        tab_explore: "होम (पब्लिक)",
-        tab_my_videos: "मेरी अपलोड्स",
-        tab_users_mgr: "यूज़र मैनेजमेंट",
-        registered_users: "रजिस्टर्ड यूज़र्स लिस्ट",
-        create_account_title: "नया अकाउंट बनाएँ",
-        create_account_sub: "V-Tube से जुड़ना आसान और बिल्कुल फ्री है।",
-        label_name: "पूरा नाम / चैनल नाम",
-        label_email: "ईमेल पता",
-        label_password: "पासवर्ड",
-        label_interests: "पसंदीदा विषय चुनें (कम से कम एक):",
-        btn_register: "अकाउंट तैयार करें",
-        already_have_acc: "पहले से अकाउंट है?",
-        btn_login_link: "लॉगिन करें",
-        login_title: "V-Tube में लॉगिन करें",
-        login_sub: "वापसी पर स्वागत है! अपनी जानकारी भरें।",
-        btn_signin: "साइन इन",
-        need_new_acc: "नया अकाउंट चाहिए?",
-        btn_register_link: "रजिस्टर करें",
-        upload_title: "नया वीडियो जोड़ें",
-        label_vid_title: "वीडियो का शीर्षक",
-        label_vid_url: "YouTube लिंक या ID",
-        label_category: "श्रेणी",
-        label_visibility: "प्राइवेसी",
-        opt_public: "🌐 पब्लिक (सभी देखें)",
-        opt_private: "🔒 प्राइवेट (सिर्फ मैं)",
-        label_desc: "विवरण",
-        btn_cancel: "रद्द करें",
-        btn_upload: "अपलोड करें",
-        btn_login: "लॉगिन",
-        btn_create_acc: "अकाउंट बनाएँ",
-        btn_upload_nav: "अपलोड",
-        no_videos_msg: "यहाँ कोई वीडियो उपलब्ध नहीं है।",
+        all: "सभी", edu: "शिक्षा", tech: "तकनीक", ent: "मनोरंजन", music: "म्यूजिक",
+        rec_feed: "सिफारिशें (Recommended)", rec_for_you: "आपके इंटरेस्ट के अनुसार फ़ीड:", view_mine: "मेरी अपलोड्स देखें →",
+        tab_explore: "होम (पब्लिक)", tab_my_videos: "मेरी अपलोड्स", tab_admin: "यूज़र मैनेजमेंट",
+        admin_dir: "रजिस्टर्ड यूज़र्स लिस्ट",
+        reg_title: "नया अकाउंट बनाएँ", reg_sub: "V-Tube से जुड़ना आसान और बिल्कुल फ्री है।",
+        name: "पूरा नाम / चैनल नाम", email: "ईमेल पता", pass: "पासवर्ड",
+        fav_topics: "पसंदीदा विषय चुनें (कम से कम एक):", signup: "अकाउंट तैयार करें", have_acc: "पहले से अकाउंट है?",
+        login: "लॉगिन करें", login_title: "V-Tube में लॉगिन करें", login_sub: "वापसी पर स्वागत है! अपनी जानकारी भरें।",
+        signin: "साइन इन", need_acc: "नया अकाउंट चाहिए?", create_one: "रजिस्टर करें",
+        up_title: "नया वीडियो जोड़ें", vid_title: "वीडियो का शीर्षक", vid_url: "YouTube लिंक या ID",
+        cat: "श्रेणी", vis: "प्राइवेसी", pub: "🌐 पब्लिक (सभी देखें)", pri: "🔒 प्राइवेट (सिर्फ मैं)",
+        desc: "विवरण", cancel: "रद्द करें", publish: "अपलोड करें", nav_upload: "अपलोड",
+        no_videos: "यहाँ कोई वीडियो उपलब्ध नहीं है।",
         confirm_logout: "क्या आप लॉगआउट करना चाहते हैं?",
-        confirm_del_vid: "क्या आप वाकई इस वीडियो को हमेशा के लिए हटाना चाहते हैं?",
-        confirm_del_user: "चेतावनी: यूज़र अकाउंट डिलीट करने से उनके सभी वीडियो भी हमेशा के लिए हट जाएँगे। क्या आप जारी रखना चाहते हैं?"
+        confirm_del_vid: "क्या आप वाकई इस वीडियो को हटाना चाहते हैं?",
+        confirm_del_user: "चेतावनी: यूज़र अकाउंट डिलीट करने से उनके सभी वीडियो भी हमेशा के लिए हट जाएँगे। जारी रखें?"
       }
     };
 
-    // State
+    // State Variables
     let currentLang = localStorage.getItem('vt_lang') || 'en';
     let currentUser = JSON.parse(localStorage.getItem('vt_session') || 'null');
-    let allVideos = [];
-    let currentFilter = 'ALL';
-    let currentTab = 'public';
+    let videoList = [];
+    let currentCategory = 'ALL';
+    let currentView = 'public';
 
-    // Apply Language
-    function applyLanguage(lang) {
-      currentLang = lang;
-      localStorage.setItem('vt_lang', lang);
-      document.getElementById('lang-label').innerText = (lang === 'en') ? 'हिन्दी' : 'English';
-
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) {
-          el.innerText = translations[lang][key];
-        }
-      });
-      renderNav();
-      renderFeed();
+    // Direct REST API Fetcher Helper
+    async function apiFetch(endpoint, options = {}) {
+      const headers = {
+        'apikey': API_KEY,
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      };
+      return fetch(`${API_BASE}${endpoint}`, { ...options, headers });
     }
 
-    function toggleLanguage() {
-      const next = (currentLang === 'en') ? 'hi' : 'en';
-      applyLanguage(next);
-    }
-
-    // Modal Helpers
-    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function switchToLogin() { closeModal('register-modal'); openModal('login-modal'); }
-    function switchToRegister() { closeModal('login-modal'); openModal('register-modal'); }
+    // Modal Handlers
+    function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function toLoginModal() { hideModal('modal-register'); showModal('modal-login'); }
+    function toRegModal() { hideModal('modal-login'); showModal('modal-register'); }
 
     // YouTube ID Extractor
-    function extractYouTubeID(url) {
+    function getYouTubeId(url) {
       if (!url) return '';
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : url.trim();
+      const reg = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const m = url.match(reg);
+      return (m && m[2].length === 11) ? m[2] : url.trim();
     }
 
-    // Navigation UI
-    function renderNav() {
-      const nav = document.getElementById('nav-actions');
-      const adminBadge = document.getElementById('admin-badge');
+    // Apply Language
+    function applyText() {
+      const t = i18n[currentLang];
+      document.getElementById('lang-btn-text').innerText = (currentLang === 'en') ? 'हिन्दी' : 'English';
+      
+      document.getElementById('cat-all').innerText = t.all;
+      document.getElementById('cat-edu').innerText = t.edu;
+      document.getElementById('cat-tech').innerText = t.tech;
+      document.getElementById('cat-ent').innerText = t.ent;
+      document.getElementById('cat-music').innerText = t.music;
+
+      document.getElementById('feed-heading-text').innerText = t.rec_feed;
+      document.getElementById('lbl-rec-for-you').innerText = t.rec_for_you;
+      document.getElementById('lbl-view-mine').innerText = t.view_mine;
+      document.getElementById('tab-public').innerText = t.tab_explore;
+      document.getElementById('tab-mine').innerText = t.tab_my_videos;
+      document.getElementById('tab-admin').innerText = t.tab_admin;
+      document.getElementById('lbl-admin-dir').innerText = t.admin_dir;
+
+      document.getElementById('m-reg-title').innerText = t.reg_title;
+      document.getElementById('m-reg-sub').innerText = t.reg_sub;
+      document.getElementById('lbl-reg-name').innerText = t.name;
+      document.getElementById('lbl-reg-email').innerText = t.email;
+      document.getElementById('lbl-reg-pass').innerText = t.pass;
+      document.getElementById('lbl-reg-fav').innerText = t.fav_topics;
+      document.getElementById('btn-submit-reg').innerText = t.signup;
+      document.getElementById('lbl-have-acc').innerText = t.have_acc;
+      document.getElementById('lbl-to-login').innerText = t.login;
+
+      document.getElementById('m-login-title').innerText = t.login_title;
+      document.getElementById('m-login-sub').innerText = t.login_sub;
+      document.getElementById('lbl-login-email').innerText = t.email;
+      document.getElementById('lbl-login-pass').innerText = t.pass;
+      document.getElementById('btn-submit-login').innerText = t.signin;
+      document.getElementById('lbl-need-acc').innerText = t.need_acc;
+      document.getElementById('lbl-to-reg').innerText = t.create_one;
+
+      document.getElementById('m-upload-title').innerText = t.up_title;
+      document.getElementById('lbl-up-title').innerText = t.vid_title;
+      document.getElementById('lbl-up-url').innerText = t.vid_url;
+      document.getElementById('lbl-up-cat').innerText = t.cat;
+      document.getElementById('lbl-up-vis').innerText = t.vis;
+      document.getElementById('opt-pub').innerText = t.pub;
+      document.getElementById('opt-pri').innerText = t.pri;
+      document.getElementById('lbl-up-desc').innerText = t.desc;
+      document.getElementById('btn-up-cancel').innerText = t.cancel;
+      document.getElementById('btn-submit-upload').innerText = t.publish;
+
+      renderNavbar();
+      renderFeedCards();
+    }
+
+    function toggleLang() {
+      currentLang = (currentLang === 'en') ? 'hi' : 'en';
+      localStorage.setItem('vt_lang', currentLang);
+      applyText();
+    }
+
+    // Render Navigation Actions
+    function renderNavbar() {
+      const container = document.getElementById('nav-user-actions');
+      const badge = document.getElementById('admin-badge');
       const tabMine = document.getElementById('tab-mine');
       const tabAdmin = document.getElementById('tab-admin');
-      const interestBanner = document.getElementById('interest-banner');
-      const t = translations[currentLang];
+      const banner = document.getElementById('interest-banner');
+      const t = i18n[currentLang];
 
       if (currentUser) {
         const isAdmin = currentUser.role === 'admin';
-        if (isAdmin) adminBadge.classList.remove('hidden');
+        badge.className = isAdmin ? 'text-[11px] bg-blue-50 text-[#1877F2] border border-blue-200 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider' : 'hidden';
         tabMine.classList.remove('hidden');
         if (isAdmin) tabAdmin.classList.remove('hidden');
 
         if (currentUser.interests && currentUser.interests.length > 0) {
-          interestBanner.classList.remove('hidden');
-          document.getElementById('user-interest-tags').innerText = currentUser.interests.join(', ');
+          banner.classList.remove('hidden');
+          document.getElementById('interest-pills').innerText = currentUser.interests.join(', ');
+        } else {
+          banner.classList.add('hidden');
         }
 
-        nav.innerHTML = `
-          <button onclick="openModal('upload-modal')" class="bg-[#1877F2] hover:bg-blue-600 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
-            <i class="fa-solid fa-cloud-arrow-up"></i> <span>${t.btn_upload_nav}</span>
+        container.innerHTML = `
+          <button onclick="showModal('modal-upload')" class="bg-[#1877F2] hover:bg-blue-600 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+            <i class="fa-solid fa-cloud-arrow-up"></i> <span>${t.nav_upload}</span>
           </button>
           <div class="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 text-xs">
             <span class="w-2 h-2 rounded-full ${isAdmin ? 'bg-indigo-600' : 'bg-emerald-500'}"></span>
             <span class="font-bold text-slate-800 max-w-[90px] truncate">${currentUser.name}</span>
-            <button onclick="handleLogout()" title="Logout" class="text-slate-400 hover:text-red-500 ml-1 transition">
+            <button onclick="doLogout()" title="Logout" class="text-slate-400 hover:text-red-500 ml-1 transition">
               <i class="fa-solid fa-arrow-right-from-bracket"></i>
             </button>
           </div>
         `;
       } else {
-        adminBadge.classList.add('hidden');
+        badge.className = 'hidden';
         tabMine.classList.add('hidden');
         tabAdmin.classList.add('hidden');
-        interestBanner.classList.add('hidden');
+        banner.classList.add('hidden');
 
-        nav.innerHTML = `
-          <button onclick="openModal('login-modal')" class="text-xs font-bold text-slate-700 hover:text-[#1877F2] px-3 py-1.5 transition">
-            ${t.btn_login}
+        container.innerHTML = `
+          <button onclick="showModal('modal-login')" class="text-xs font-bold text-slate-700 hover:text-[#1877F2] px-3 py-1.5 transition">
+            ${t.login}
           </button>
-          <button onclick="openModal('register-modal')" class="bg-[#1877F2] hover:bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm transition">
-            ${t.btn_create_acc}
+          <button onclick="showModal('modal-register')" class="bg-[#1877F2] hover:bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm transition">
+            ${t.signup}
           </button>
         `;
       }
     }
 
-    // AUTH: REGISTER
-    async function handleRegister(e) {
+    // Register Handler
+    async function doRegister(e) {
       e.preventDefault();
-      const name = document.getElementById('reg-name').value.trim();
-      const email = document.getElementById('reg-email').value.trim().toLowerCase();
-      const password = document.getElementById('reg-pass').value.trim();
-      const checkboxes = document.querySelectorAll('input[name="interest"]:checked');
-      const interests = Array.from(checkboxes).map(c => c.value);
+      const name = document.getElementById('form-name').value.trim();
+      const email = document.getElementById('form-email').value.trim().toLowerCase();
+      const password = document.getElementById('form-pass').value.trim();
+      const checkedBoxes = document.querySelectorAll('input[name="u_interest"]:checked');
+      const interests = Array.from(checkedBoxes).map(b => b.value);
 
       if (interests.length === 0) {
-        alert("Please pick at least one topic of interest!");
+        alert("Please pick at least one topic!");
         return;
       }
 
-      const btn = document.getElementById('reg-btn');
-      btn.innerText = "...";
-      btn.disabled = true;
+      const userObj = {
+        name,
+        email,
+        password,
+        interests,
+        role: 'user'
+      };
 
-      const newUser = { id: 'usr_' + Date.now(), name, email, password, interests, role: 'user' };
-
-      if (supabase) {
-        try {
-          const { data, error } = await supabase.from('app_users').insert([
-            { name, email, password, interests, role: 'user' }
-          ]).select().single();
-          if (!error && data) newUser.id = data.id;
-        } catch (err) { console.warn("Supabase register error:", err); }
+      try {
+        const res = await apiFetch('/app_users', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(userObj)
+        });
+        if (res.ok) {
+          const inserted = await res.json();
+          if (inserted && inserted[0]) userObj.id = inserted[0].id;
+        }
+      } catch (err) {
+        console.warn("Server register fallback:", err);
       }
 
-      // Local Session Storage
-      currentUser = newUser;
-      localStorage.setItem('vt_session', JSON.stringify(newUser));
-      btn.innerText = translations[currentLang].btn_register;
-      btn.disabled = false;
+      if (!userObj.id) userObj.id = 'usr_' + Date.now();
 
-      closeModal('register-modal');
-      renderNav();
-      fetchVideos();
+      currentUser = userObj;
+      localStorage.setItem('vt_session', JSON.stringify(userObj));
+      hideModal('modal-register');
+      applyText();
+      loadVideos();
     }
 
-    // AUTH: LOGIN
-    async function handleLogin(e) {
+    // Login Handler
+    async function doLogin(e) {
       e.preventDefault();
-      const email = document.getElementById('login-email').value.trim().toLowerCase();
-      const password = document.getElementById('login-pass').value.trim();
-      const btn = document.getElementById('login-btn');
+      const email = document.getElementById('login-email-input').value.trim().toLowerCase();
+      const pass = document.getElementById('login-pass-input').value.trim();
 
-      btn.innerText = "...";
-      btn.disabled = true;
-
-      let loggedIn = null;
-
-      // Hardcoded Admin Quick Access
-      if (email === 'admin@mytube.com' && password === 'admin123') {
-        loggedIn = { id: 'admin_root', name: 'Super Admin', email: 'admin@mytube.com', role: 'admin', interests: ['Education', 'Technology'] };
-      }
-
-      if (!loggedIn && supabase) {
-        try {
-          const { data } = await supabase.from('app_users').select('*').eq('email', email).eq('password', password).single();
-          if (data) loggedIn = data;
-        } catch (err) { console.warn("Supabase login err:", err); }
-      }
-
-      btn.innerText = translations[currentLang].btn_signin;
-      btn.disabled = false;
-
-      if (!loggedIn) {
-        alert("Invalid email or password!");
+      // Quick Admin Bypass
+      if (email === 'admin@mytube.com' && pass === 'admin123') {
+        currentUser = { id: 'admin_root', name: 'Super Admin', email: 'admin@mytube.com', role: 'admin', interests: ['Education', 'Technology'] };
+        localStorage.setItem('vt_session', JSON.stringify(currentUser));
+        hideModal('modal-login');
+        applyText();
+        loadVideos();
         return;
       }
 
-      currentUser = loggedIn;
-      localStorage.setItem('vt_session', JSON.stringify(loggedIn));
-      closeModal('login-modal');
-      renderNav();
-      fetchVideos();
+      try {
+        const res = await apiFetch(`/app_users?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(pass)}&select=*`);
+        if (res.ok) {
+          const users = await res.json();
+          if (users && users.length > 0) {
+            currentUser = users[0];
+            localStorage.setItem('vt_session', JSON.stringify(currentUser));
+            hideModal('modal-login');
+            applyText();
+            loadVideos();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("DB Login Error:", err);
+      }
+
+      alert("Invalid email or password!");
     }
 
-    function handleLogout() {
-      if (confirm(translations[currentLang].confirm_logout)) {
+    function doLogout() {
+      if (confirm(i18n[currentLang].confirm_logout)) {
         localStorage.removeItem('vt_session');
         currentUser = null;
-        switchView('public');
-        renderNav();
-        fetchVideos();
+        changeView('public');
+        applyText();
+        loadVideos();
       }
     }
 
-    // UPLOAD VIDEO
-    async function handleUpload(e) {
+    // Upload Video Handler
+    async function doUpload(e) {
       e.preventDefault();
       if (!currentUser) return;
 
-      const title = document.getElementById('vid-title').value.trim();
-      const rawUrl = document.getElementById('vid-url').value.trim();
-      const category = document.getElementById('vid-category').value;
-      const visibility = document.getElementById('vid-visibility').value;
-      const description = document.getElementById('vid-desc').value.trim();
-      const ytId = extractYouTubeID(rawUrl);
+      const title = document.getElementById('up-title').value.trim();
+      const url = document.getElementById('up-url').value.trim();
+      const category = document.getElementById('up-cat').value;
+      const visibility = document.getElementById('up-vis').value;
+      const description = document.getElementById('up-desc').value.trim();
+      const ytId = getYouTubeId(url);
 
       if (!ytId) {
-        alert("Invalid YouTube URL!");
+        alert("Invalid YouTube URL or ID!");
         return;
       }
 
-      const newVid = {
+      const newVideo = {
         id: 'vid_' + Date.now(),
         user_id: currentUser.id,
         creator_name: currentUser.name,
@@ -563,120 +546,126 @@
         created_at: new Date().toISOString()
       };
 
-      if (supabase) {
-        try {
-          await supabase.from('videos').insert([{
-            user_id: currentUser.id,
+      try {
+        await apiFetch('/videos', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify({
+            user_id: currentUser.id.startsWith('usr_') ? null : currentUser.id,
             title,
             description,
             youtube_id: ytId,
             category,
             visibility,
-            thumbnail_url: newVid.thumbnail_url,
+            thumbnail_url: newVideo.thumbnail_url,
             views: 1
-          }]);
-        } catch (err) { console.warn("Supabase insert error:", err); }
+          })
+        });
+      } catch (err) {
+        console.warn("Video insert note:", err);
       }
 
-      // Local backup sync
+      // Local storage backup
       const cache = JSON.parse(localStorage.getItem('vt_videos_cache') || '[]');
-      cache.unshift(newVid);
+      cache.unshift(newVideo);
       localStorage.setItem('vt_videos_cache', JSON.stringify(cache));
 
-      closeModal('upload-modal');
-      document.getElementById('vid-title').value = '';
-      document.getElementById('vid-url').value = '';
-      document.getElementById('vid-desc').value = '';
-      fetchVideos();
+      hideModal('modal-upload');
+      document.getElementById('up-title').value = '';
+      document.getElementById('up-url').value = '';
+      document.getElementById('up-desc').value = '';
+      loadVideos();
     }
 
-    // FETCH VIDEOS
-    async function fetchVideos() {
-      let videos = [];
-      if (supabase) {
-        try {
-          const { data, error } = await supabase.from('videos').select('*, app_users(name, role)').order('created_at', { ascending: false });
-          if (!error && data && data.length > 0) videos = data;
-        } catch (err) { console.warn("Fetch error:", err); }
+    // Load Videos
+    async function loadVideos() {
+      let fetched = [];
+      try {
+        const res = await apiFetch('/videos?select=*,app_users(name,role)&order=created_at.desc');
+        if (res.ok) {
+          const list = await res.json();
+          if (list && list.length > 0) fetched = list;
+        }
+      } catch (err) {
+        console.warn("Video fetch fallback:", err);
       }
 
-      if (videos.length === 0) {
-        const cached = JSON.parse(localStorage.getItem('vt_videos_cache') || '[]');
-        if (cached.length > 0) {
-          videos = cached;
+      if (fetched.length === 0) {
+        const local = JSON.parse(localStorage.getItem('vt_videos_cache') || '[]');
+        if (local.length > 0) {
+          fetched = local;
         } else {
-          // Default Demo Content
-          videos = [
+          // Default High Quality Demo Videos
+          fetched = [
             {
               id: 'demo_1',
-              title: 'Learn Modern Web Architecture with Practical Examples',
-              description: 'Comprehensive overview of building smart, cost-effective web platforms.',
+              title: 'Learn Modern Web Architecture with Zero-Cost Cloud Tools',
+              description: 'Step-by-step practical guide to designing robust web platforms.',
               youtube_id: 'dQw4w9WgXcQ',
               category: 'Education',
               visibility: 'public',
-              creator_name: 'Platform Instructor',
-              views: 142
+              creator_name: 'Lead Instructor',
+              views: 240
             },
             {
               id: 'demo_2',
-              title: 'Introduction to Cloud Databases & Serverless Technology',
-              description: 'How serverless cloud backends scale automatically with zero maintenance.',
+              title: 'Serverless Databases and Progressive Web Applications Overview',
+              description: 'Explore the modern cloud architecture ecosystem without server costs.',
               youtube_id: 'aircAruvnKk',
               category: 'Technology',
               visibility: 'public',
-              creator_name: 'Tech Lab',
-              views: 98
+              creator_name: 'Tech Specialist',
+              views: 185
             }
           ];
         }
       }
 
-      allVideos = videos;
-      renderFeed();
+      videoList = fetched;
+      renderFeedCards();
     }
 
-    // RENDER FEED WITH SMART INTEREST RANKING
-    function renderFeed() {
-      const grid = document.getElementById('video-grid');
-      const usersPanel = document.getElementById('admin-users-panel');
-      const t = translations[currentLang];
+    // Render Cards
+    function renderFeedCards() {
+      const grid = document.getElementById('grid-container');
+      const adminBox = document.getElementById('admin-panel');
+      const t = i18n[currentLang];
 
-      if (currentTab === 'users_mgr') {
+      if (currentView === 'admin') {
         grid.classList.add('hidden');
-        usersPanel.classList.remove('hidden');
-        loadAdminUsers();
+        adminBox.classList.remove('hidden');
+        fetchAdminUsers();
         return;
       } else {
         grid.classList.remove('hidden');
-        usersPanel.classList.add('hidden');
+        adminBox.classList.add('hidden');
       }
 
       let list = [];
       const isAdmin = currentUser && currentUser.role === 'admin';
 
-      if (currentTab === 'mine') {
-        list = allVideos.filter(v => v.user_id === currentUser.id);
+      if (currentView === 'mine') {
+        list = videoList.filter(v => v.user_id === currentUser.id);
       } else {
-        list = allVideos.filter(v => v.visibility === 'public');
+        list = videoList.filter(v => v.visibility === 'public');
 
-        // SMART INTEREST RANKING
+        // Interest Sorting
         if (currentUser && currentUser.interests && currentUser.interests.length > 0) {
-          const uTags = currentUser.interests;
+          const userTopics = currentUser.interests;
           list.sort((a, b) => {
-            const aMatch = uTags.includes(a.category) ? 1 : 0;
-            const bMatch = uTags.includes(b.category) ? 1 : 0;
-            return bMatch - aMatch;
+            const aHas = userTopics.includes(a.category) ? 1 : 0;
+            const bHas = userTopics.includes(b.category) ? 1 : 0;
+            return bHas - aHas;
           });
         }
       }
 
-      // Filter category pills
-      if (currentFilter !== 'ALL') {
-        list = list.filter(v => v.category === currentFilter);
+      if (currentCategory !== 'ALL') {
+        list = list.filter(v => v.category === currentCategory);
       }
 
       if (list.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-400 font-medium">${t.no_videos_msg}</div>`;
+        grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-400 font-medium">${t.no_videos}</div>`;
         return;
       }
 
@@ -687,7 +676,7 @@
 
         return `
           <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col justify-between group">
-            <div onclick="playVideo('${v.youtube_id}', '${encodeURIComponent(v.title)}', '${encodeURIComponent(v.description || '')}')" class="cursor-pointer">
+            <div onclick="playVid('${v.youtube_id}', '${encodeURIComponent(v.title)}', '${encodeURIComponent(v.description || '')}')" class="cursor-pointer">
               <div class="aspect-video bg-slate-900 relative overflow-hidden">
                 <img src="${v.thumbnail_url || 'https://img.youtube.com/vi/' + v.youtube_id + '/hqdefault.jpg'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                 <span class="absolute bottom-2.5 right-2.5 bg-black/75 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">${v.category}</span>
@@ -704,7 +693,7 @@
 
             ${canDelete ? `
               <div class="px-4 pb-3 pt-0 flex justify-end">
-                <button onclick="deleteVideo('${v.id}')" class="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg transition border border-red-100">
+                <button onclick="removeVid('${v.id}')" class="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg transition border border-red-100">
                   <i class="fa-solid fa-trash-can mr-1"></i> ${isAdmin && v.user_id !== currentUser?.id ? 'Delete (Admin)' : 'Delete'}
                 </button>
               </div>
@@ -714,61 +703,52 @@
       }).join('');
     }
 
-    // PLAY VIDEO
-    function playVideo(ytId, encTitle, encDesc) {
-      const container = document.getElementById('player-container');
-      const player = document.getElementById('main-player');
-      container.classList.remove('hidden');
-      player.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`;
-      document.getElementById('player-title').innerText = decodeURIComponent(encTitle);
-      document.getElementById('player-desc').innerText = decodeURIComponent(encDesc);
+    // Play & Close Video
+    function playVid(ytId, encTitle, encDesc) {
+      const box = document.getElementById('player-box');
+      const ifr = document.getElementById('main-iframe');
+      box.classList.remove('hidden');
+      ifr.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`;
+      document.getElementById('playing-title').innerText = decodeURIComponent(encTitle);
+      document.getElementById('playing-desc').innerText = decodeURIComponent(encDesc);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function closePlayer() {
-      const container = document.getElementById('player-container');
-      const player = document.getElementById('main-player');
-      player.src = '';
-      container.classList.add('hidden');
+    function hidePlayer() {
+      document.getElementById('main-iframe').src = '';
+      document.getElementById('player-box').classList.add('hidden');
     }
 
-    // DELETE VIDEO
-    async function deleteVideo(vidId) {
-      if (!confirm(translations[currentLang].confirm_del_vid)) return;
+    // Delete Video
+    async function removeVid(vidId) {
+      if (!confirm(i18n[currentLang].confirm_del_vid)) return;
+      try {
+        await apiFetch(`/videos?id=eq.${vidId}`, { method: 'DELETE' });
+      } catch (err) {}
 
-      if (supabase) {
-        try { await supabase.from('videos').delete().eq('id', vidId); } catch(e){}
-      }
-
-      allVideos = allVideos.filter(v => v.id !== vidId);
+      videoList = videoList.filter(v => v.id !== vidId);
       const cache = JSON.parse(localStorage.getItem('vt_videos_cache') || '[]').filter(v => v.id !== vidId);
       localStorage.setItem('vt_videos_cache', JSON.stringify(cache));
-
-      renderFeed();
+      renderFeedCards();
     }
 
-    // ADMIN: USER MANAGEMENT
-    async function loadAdminUsers() {
-      const tbody = document.getElementById('users-table-body');
+    // Admin Users Directory
+    async function fetchAdminUsers() {
+      const tbody = document.getElementById('admin-tbody');
       tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Loading directory...</td></tr>';
 
-      let users = [];
-      if (supabase) {
-        try {
-          const { data } = await supabase.from('app_users').select('*').order('created_at', { ascending: false });
-          if (data) users = data;
-        } catch(e){}
+      let list = [];
+      try {
+        const res = await apiFetch('/app_users?select=*&order=created_at.desc');
+        if (res.ok) list = await res.json();
+      } catch (e) {}
+
+      if (list.length === 0) {
+        list = [{ id: 'u_adm', name: 'Super Admin', email: 'admin@mytube.com', role: 'admin', interests: ['Education', 'Technology'] }];
       }
 
-      if (users.length === 0) {
-        users = [
-          { id: 'u1', name: 'Super Admin', email: 'admin@mytube.com', role: 'admin', interests: ['Education', 'Technology'] }
-        ];
-      }
-
-      document.getElementById('total-users').innerText = `Total: ${users.length} Users`;
-
-      tbody.innerHTML = users.map(u => `
+      document.getElementById('admin-count').innerText = `Total: ${list.length} Users`;
+      tbody.innerHTML = list.map(u => `
         <tr class="hover:bg-slate-50/80 transition">
           <td class="p-3.5 font-bold text-slate-800">${u.name}</td>
           <td class="p-3.5 text-slate-500 font-mono text-xs">${u.email}</td>
@@ -780,7 +760,7 @@
           <td class="p-3.5 text-xs text-slate-500">${(u.interests || []).join(', ') || '-'}</td>
           <td class="p-3.5 text-right">
             ${u.role !== 'admin' ? `
-              <button onclick="deleteUserAccount('${u.id}')" class="text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg border border-red-200 transition">
+              <button onclick="removeUser('${u.id}')" class="text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg border border-red-200 transition">
                 Remove User
               </button>
             ` : '<span class="text-xs text-slate-400 font-bold">Protected</span>'}
@@ -789,47 +769,47 @@
       `).join('');
     }
 
-    async function deleteUserAccount(userId) {
-      if (!confirm(translations[currentLang].confirm_del_user)) return;
-      if (supabase) {
-        try { await supabase.from('app_users').delete().eq('id', userId); } catch(e){}
-      }
-      loadAdminUsers();
-      fetchVideos();
+    async function removeUser(uid) {
+      if (!confirm(i18n[currentLang].confirm_del_user)) return;
+      try {
+        await apiFetch(`/app_users?id=eq.${uid}`, { method: 'DELETE' });
+      } catch(e){}
+      fetchAdminUsers();
+      loadVideos();
     }
 
-    // VIEW SWITCH
-    function switchView(view) {
-      currentTab = view;
-      const tPublic = document.getElementById('tab-public');
-      const tMine = document.getElementById('tab-mine');
-      const tAdmin = document.getElementById('tab-admin');
+    // View & Category Selectors
+    function changeView(view) {
+      currentView = view;
+      const bPub = document.getElementById('tab-public');
+      const bMine = document.getElementById('tab-mine');
+      const bAdm = document.getElementById('tab-admin');
 
-      [tPublic, tMine, tAdmin].forEach(el => {
-        el.className = 'text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-lg transition';
-      });
+      [bPub, bMine, bAdm].forEach(b => b.className = 'text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-lg transition');
 
-      if (view === 'public') tPublic.className = 'bg-white text-[#1877F2] px-4 py-1.5 rounded-lg shadow-sm transition font-bold';
-      if (view === 'mine') tMine.className = 'bg-white text-[#1877F2] px-4 py-1.5 rounded-lg shadow-sm transition font-bold';
-      if (view === 'users_mgr') tAdmin.className = 'bg-indigo-600 text-white px-4 py-1.5 rounded-lg shadow-sm transition font-bold';
+      if (view === 'public') bPub.className = 'bg-white text-[#1877F2] px-4 py-1.5 rounded-lg shadow-sm transition font-bold';
+      if (view === 'mine') bMine.className = 'bg-white text-[#1877F2] px-4 py-1.5 rounded-lg shadow-sm transition font-bold';
+      if (view === 'admin') bAdm.className = 'bg-indigo-600 text-white px-4 py-1.5 rounded-lg shadow-sm transition font-bold';
 
-      renderFeed();
+      renderFeedCards();
     }
 
-    function filterCategory(evt, cat) {
-      currentFilter = cat;
+    function selectCategory(cat) {
+      currentCategory = cat;
       document.querySelectorAll('.cat-pill').forEach(btn => {
         btn.className = 'cat-pill text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full transition';
       });
-      if (evt && evt.target) {
-        evt.target.className = 'cat-pill bg-white text-[#1877F2] px-4 py-1.5 rounded-full shadow-sm transition font-bold';
+      const targetMap = { 'ALL': 'cat-all', 'Education': 'cat-edu', 'Technology': 'cat-tech', 'Entertainment': 'cat-ent', 'Music': 'cat-music' };
+      if (targetMap[cat]) {
+        document.getElementById(targetMap[cat]).className = 'cat-pill bg-white text-[#1877F2] px-4 py-1.5 rounded-full shadow-sm transition font-bold';
       }
-      renderFeed();
+      renderFeedCards();
     }
 
-    // INIT
+    // Startup
     window.addEventListener('DOMContentLoaded', () => {
-      applyLanguage(currentLang);
+      applyText();
+      loadVideos();
     });
   </script>
 </body>

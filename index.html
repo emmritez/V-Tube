@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyTube - Video Sharing</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Library -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-900/90 sticky top-0 backdrop-blur z-50">
+    <div class="flex items-center gap-2 cursor-pointer">
+      <span class="text-red-500 font-black text-2xl tracking-tighter">▶ MyTube</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="open-modal-btn" class="bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-full text-sm font-semibold transition active:scale-95 shadow">
+        + वीडियो जोड़ें
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6">
+    <!-- Active Video Player Area -->
+    <div id="player-container" class="hidden mb-8">
+      <div class="aspect-video w-full max-w-4xl mx-auto rounded-2xl overflow-hidden bg-black shadow-2xl border border-zinc-800">
+        <iframe id="main-player" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <div class="max-w-4xl mx-auto mt-4">
+        <h1 id="player-title" class="text-xl font-bold"></h1>
+        <p id="player-desc" class="text-sm text-zinc-400 mt-1"></p>
+      </div>
+      <hr class="border-zinc-800 my-6">
+    </div>
+
+    <!-- Feed Heading -->
+    <h2 class="text-lg font-bold mb-4 text-zinc-200">लेटेस्ट वीडियो</h2>
+    <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+      <p class="text-zinc-500 col-span-full">लोड हो रहा है...</p>
+    </div>
+  </main>
+
+  <!-- Upload Modal -->
+  <div id="upload-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-white">नया वीडियो जोड़ें</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs text-zinc-400 font-medium">वीडियो का शीर्षक (Title)</label>
+          <input id="new-title" type="text" placeholder="उदा. My First Vlog" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400 font-medium">YouTube Video URL या ID</label>
+          <input id="new-url" type="text" placeholder="https://youtu.be/... या ID" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400 font-medium">विवरण (Description)</label>
+          <textarea id="new-desc" rows="3" placeholder="वीडियो के बारे में लिखें..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button id="close-modal-btn" class="px-4 py-2 text-sm text-zinc-400 hover:text-white transition">रद्द करें</button>
+        <button id="save-video-btn" class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg text-sm font-semibold text-white shadow transition">सेव करें</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. SUPABASE CREDENTIALS
+    const SUPABASE_URL = "https://gccvgzuimkxpfwpjpipd.supabase.co";
+    // अपनी कॉपी की हुई Key यहाँ डालें
+    const SUPABASE_KEY = "अपनी_PUBLISHABLE_KEY_यहाँ_पेस्ट_करें";
+
+    let supabaseClient = null;
+    try {
+      if (window.supabase && SUPABASE_KEY !== "अपनी_PUBLISHABLE_KEY_यहाँ_पेस्ट_करें") {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    } catch (e) {
+      console.warn("Supabase Init Warning:", e);
+    }
+
+    // Modal Controls
+    const modal = document.getElementById('upload-modal');
+    document.getElementById('open-modal-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+    document.getElementById('close-modal-btn').addEventListener('click', () => modal.classList.add('hidden'));
+
+    // Extract YouTube ID
+    function extractYouTubeID(url) {
+      if (!url) return '';
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : url.trim();
+    }
+
+    // Load Videos
+    async function loadVideos() {
+      const grid = document.getElementById('video-grid');
+      let videos = [];
+
+      // 1. Try Supabase first
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('videos').select('*').order('created_at', { ascending: false });
+          if (!error && data) videos = data;
+        } catch (err) {
+          console.warn("Supabase fetch failed, falling back to local:", err);
+        }
+      }
+
+      // 2. If Supabase fails or empty, fetch Local Storage backup
+      if (videos.length === 0) {
+        const local = localStorage.getItem('mytube_videos');
+        if (local) {
+          videos = JSON.parse(local);
+        } else {
+          // Default test video
+          videos = [{
+            youtube_id: 'dQw4w9WgXcQ',
+            title: 'Welcome to MyTube (Demo Video)',
+            description: 'Yeh custom video sharing platform ka pehla video hai.',
+            views: 12
+          }];
+        }
+      }
+
+      renderVideos(videos);
+    }
+
+    function renderVideos(videos) {
+      const grid = document.getElementById('video-grid');
+      if (videos.length === 0) {
+        grid.innerHTML = '<p class="text-zinc-500 col-span-full">अभी कोई वीडियो नहीं है। ऊपर दिए बटन से पहला वीडियो जोड़ें!</p>';
+        return;
+      }
+
+      grid.innerHTML = videos.map(v => `
+        <div onclick="playVideo('${v.youtube_id}', '${encodeURIComponent(v.title || '')}', '${encodeURIComponent(v.description || '')}')" class="group cursor-pointer">
+          <div class="aspect-video bg-zinc-800 rounded-xl overflow-hidden relative border border-zinc-800 group-hover:border-zinc-600 transition shadow">
+            <img src="${v.thumbnail_url || 'https://img.youtube.com/vi/' + v.youtube_id + '/hqdefault.jpg'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+          </div>
+          <h3 class="font-semibold text-sm mt-2 line-clamp-2 text-zinc-100 group-hover:text-red-400 transition">${v.title}</h3>
+          <p class="text-xs text-zinc-500 mt-1">${v.views || 1} views • अभी</p>
+        </div>
+      `).join('');
+    }
+
+    function playVideo(ytId, encTitle, encDesc) {
+      const container = document.getElementById('player-container');
+      const player = document.getElementById('main-player');
+      container.classList.remove('hidden');
+      player.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`;
+      document.getElementById('player-title').innerText = decodeURIComponent(encTitle);
+      document.getElementById('player-desc').innerText = decodeURIComponent(encDesc);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Save Video Button Handler
+    document.getElementById('save-video-btn').addEventListener('click', async () => {
+      const title = document.getElementById('new-title').value.trim();
+      const rawUrl = document.getElementById('new-url').value.trim();
+      const desc = document.getElementById('new-desc').value.trim();
+      const saveBtn = document.getElementById('save-video-btn');
+
+      if (!title || !rawUrl) {
+        alert("कृपया टाइटल और URL दोनों भरें!");
+        return;
+      }
+
+      const ytId = extractYouTubeID(rawUrl);
+      const thumbnail = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+
+      saveBtn.innerText = "सेव हो रहा है...";
+      saveBtn.disabled = true;
+
+      const newVideoObj = {
+        title: title,
+        description: desc,
+        youtube_id: ytId,
+        thumbnail_url: thumbnail,
+        views: 1,
+        created_at: new Date().toISOString()
+      };
+
+      // 1. Save to Supabase if connected
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('videos').insert([newVideoObj]);
+        } catch (e) {
+          console.warn("Supabase insert error:", e);
+        }
+      }
+
+      // 2. Always save to Local Storage as instant cache
+      const local = JSON.parse(localStorage.getItem('mytube_videos') || '[]');
+      local.unshift(newVideoObj);
+      localStorage.setItem('mytube_videos', JSON.stringify(local));
+
+      // Reset Form & UI
+      document.getElementById('new-title').value = '';
+      document.getElementById('new-url').value = '';
+      document.getElementById('new-desc').value = '';
+      modal.classList.add('hidden');
+      saveBtn.innerText = "सेव करें";
+      saveBtn.disabled = false;
+
+      loadVideos();
+    });
+
+    // Initial Load
+    loadVideos();
+  </script>
+</body>
+</html>

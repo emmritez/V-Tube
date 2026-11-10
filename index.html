@@ -3,92 +3,229 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MyTube - Video Sharing</title>
+  <title>MyTube - Smart Video Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS Library -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-zinc-950 text-white min-h-screen">
+<body class="bg-zinc-950 text-white min-h-screen flex flex-col font-sans">
 
-  <!-- Header -->
-  <header class="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-900/90 sticky top-0 backdrop-blur z-50">
-    <div class="flex items-center gap-2 cursor-pointer">
-      <span class="text-red-500 font-black text-2xl tracking-tighter">▶ MyTube</span>
+  <!-- NAVBAR -->
+  <header class="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-900/90 sticky top-0 backdrop-blur z-40">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="filterCategory('ALL')">
+      <span class="text-red-500 font-black text-2xl tracking-tighter flex items-center gap-1">
+        <i class="fa-brands fa-youtube"></i> MyTube
+      </span>
+      <span id="admin-badge" class="hidden text-xs bg-red-600/30 text-red-400 border border-red-500/40 px-2 py-0.5 rounded font-mono uppercase">Admin Mode</span>
     </div>
-    <div class="flex items-center gap-3">
-      <button id="open-modal-btn" class="bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-full text-sm font-semibold transition active:scale-95 shadow">
-        + वीडियो जोड़ें
-      </button>
+
+    <!-- Category Filters -->
+    <div id="category-pills" class="hidden md:flex gap-2 text-xs">
+      <button onclick="filterCategory('ALL')" class="cat-pill bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-full transition active-pill">सभी</button>
+      <button onclick="filterCategory('Education')" class="cat-pill bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 px-3 py-1.5 rounded-full transition">शिक्षा (Education)</button>
+      <button onclick="filterCategory('Technology')" class="cat-pill bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 px-3 py-1.5 rounded-full transition">टेक्नोलॉजी</button>
+      <button onclick="filterCategory('Entertainment')" class="cat-pill bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 px-3 py-1.5 rounded-full transition">मनोरंजन</button>
+      <button onclick="filterCategory('Music')" class="cat-pill bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 px-3 py-1.5 rounded-full transition">म्यूजिक</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3" id="nav-actions">
+      <!-- Dynamic JS will render buttons here -->
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto p-6">
-    <!-- Active Video Player Area -->
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-7xl mx-auto p-6 w-full flex-1">
+    
+    <!-- Player Container -->
     <div id="player-container" class="hidden mb-8">
       <div class="aspect-video w-full max-w-4xl mx-auto rounded-2xl overflow-hidden bg-black shadow-2xl border border-zinc-800">
         <iframe id="main-player" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
-      <div class="max-w-4xl mx-auto mt-4">
-        <h1 id="player-title" class="text-xl font-bold"></h1>
-        <p id="player-desc" class="text-sm text-zinc-400 mt-1"></p>
+      <div class="max-w-4xl mx-auto mt-4 flex justify-between items-start">
+        <div>
+          <h1 id="player-title" class="text-xl font-bold"></h1>
+          <p id="player-desc" class="text-sm text-zinc-400 mt-1"></p>
+        </div>
+        <button onclick="closePlayer()" class="text-zinc-500 hover:text-white px-3 py-1 border border-zinc-800 rounded-lg text-sm">बंद करें ✕</button>
       </div>
       <hr class="border-zinc-800 my-6">
     </div>
 
-    <!-- Feed Heading -->
-    <h2 class="text-lg font-bold mb-4 text-zinc-200">लेटेस्ट वीडियो</h2>
-    <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-      <p class="text-zinc-500 col-span-full">लोड हो रहा है...</p>
+    <!-- Personalization Notice -->
+    <div id="interest-banner" class="hidden mb-6 p-4 rounded-xl bg-gradient-to-r from-red-950/40 to-zinc-900 border border-red-900/30 flex justify-between items-center">
+      <div class="text-sm">
+        <span class="text-red-400 font-semibold"><i class="fa-solid fa-sparkles"></i> आपके इंटरेस्ट के अनुसार फ़ीड:</span>
+        <span id="user-interest-tags" class="text-zinc-300 ml-2"></span>
+      </div>
+      <button onclick="openTab('my_videos')" class="text-xs text-zinc-400 hover:text-white underline">मेरे वीडियोज़ देखें</button>
+    </div>
+
+    <!-- Header & Tabs -->
+    <div class="flex justify-between items-center mb-6">
+      <h2 id="feed-title" class="text-lg font-bold text-zinc-200">सिफारिशें (Recommended)</h2>
+      <div id="view-tabs" class="flex gap-2 text-xs">
+        <button onclick="switchView('public')" id="tab-public" class="bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium">होम (पब्लिक)</button>
+        <button onclick="switchView('mine')" id="tab-mine" class="hidden bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg font-medium">मेरी अपलोड्स (Private + Public)</button>
+        <button onclick="switchView('users_mgr')" id="tab-admin" class="hidden bg-purple-900/60 border border-purple-500/50 hover:bg-purple-800 text-purple-200 px-3 py-1.5 rounded-lg font-medium"><i class="fa-solid fa-users-gear"></i> यूज़र मैनेजमेंट</button>
+      </div>
+    </div>
+
+    <!-- Video Grid -->
+    <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+
+    <!-- Admin Users Table Container -->
+    <div id="admin-users-panel" class="hidden bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mt-4">
+      <div class="p-4 border-b border-zinc-800 flex justify-between items-center">
+        <h3 class="font-bold text-sm">रजिस्टर्ड यूज़र्स लिस्ट</h3>
+        <span id="total-users" class="text-xs text-zinc-400"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-zinc-300">
+          <thead class="text-xs bg-zinc-950 text-zinc-400 uppercase border-b border-zinc-800">
+            <tr>
+              <th class="p-3">नाम</th>
+              <th class="p-3">ईमेल</th>
+              <th class="p-3">रोल</th>
+              <th class="p-3">पसंदीदा इंटरेस्ट्स</th>
+              <th class="p-3 text-right">एक्शन</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body" class="divide-y divide-zinc-800"></tbody>
+        </table>
+      </div>
     </div>
   </main>
 
-  <!-- Upload Modal -->
-  <div id="upload-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <!-- MODAL: REGISTRATION / CREATE ACCOUNT -->
+  <div id="register-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-      <h3 class="text-lg font-bold mb-4 text-white">नया वीडियो जोड़ें</h3>
-      <div class="space-y-4">
-        <div>
-          <label class="text-xs text-zinc-400 font-medium">वीडियो का शीर्षक (Title)</label>
-          <input id="new-title" type="text" placeholder="उदा. My First Vlog" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
-        </div>
-        <div>
-          <label class="text-xs text-zinc-400 font-medium">YouTube Video URL या ID</label>
-          <input id="new-url" type="text" placeholder="https://youtu.be/... या ID" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
-        </div>
-        <div>
-          <label class="text-xs text-zinc-400 font-medium">विवरण (Description)</label>
-          <textarea id="new-desc" rows="3" placeholder="वीडियो के बारे में लिखें..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white"></textarea>
-        </div>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white">नया अकाउंट बनाएँ</h3>
+        <button onclick="closeModal('register-modal')" class="text-zinc-400 hover:text-white">✕</button>
       </div>
-      <div class="flex justify-end gap-3 mt-6">
-        <button id="close-modal-btn" class="px-4 py-2 text-sm text-zinc-400 hover:text-white transition">रद्द करें</button>
-        <button id="save-video-btn" class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg text-sm font-semibold text-white shadow transition">सेव करें</button>
-      </div>
+      <form onsubmit="handleRegister(event)" class="space-y-3">
+        <div>
+          <label class="text-xs text-zinc-400">आपका नाम / चैनल नाम</label>
+          <input id="reg-name" required type="text" placeholder="उदा. रितेश श्रीवास्तव" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400">ईमेल आईडी</label>
+          <input id="reg-email" required type="email" placeholder="name@example.com" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400">पासवर्ड</label>
+          <input id="reg-pass" required type="password" placeholder="कम से कम 6 अक्षर" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400 block mb-1">आपकी पसंदीदा केटेगरी (कम से कम एक चुनें):</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <label class="flex items-center gap-2 bg-zinc-800/80 p-2 rounded cursor-pointer"><input type="checkbox" name="interest" value="Education" class="accent-red-600" checked> शिक्षा (Education)</label>
+            <label class="flex items-center gap-2 bg-zinc-800/80 p-2 rounded cursor-pointer"><input type="checkbox" name="interest" value="Technology" class="accent-red-600"> टेक्नोलॉजी</label>
+            <label class="flex items-center gap-2 bg-zinc-800/80 p-2 rounded cursor-pointer"><input type="checkbox" name="interest" value="Entertainment" class="accent-red-600"> मनोरंजन</label>
+            <label class="flex items-center gap-2 bg-zinc-800/80 p-2 rounded cursor-pointer"><input type="checkbox" name="interest" value="Music" class="accent-red-600"> संगीत (Music)</label>
+          </div>
+        </div>
+        <button type="submit" id="reg-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg text-sm transition mt-2">अकाउंट तैयार करें</button>
+      </form>
+      <p class="text-xs text-zinc-400 text-center mt-4">
+        पहले से अकाउंट है? <button onclick="switchToLogin()" class="text-red-400 hover:underline">लॉगिन करें</button>
+      </p>
     </div>
   </div>
 
+  <!-- MODAL: LOGIN -->
+  <div id="login-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white">लॉगिन करें</h3>
+        <button onclick="closeModal('login-modal')" class="text-zinc-400 hover:text-white">✕</button>
+      </div>
+      <form onsubmit="handleLogin(event)" class="space-y-3">
+        <div>
+          <label class="text-xs text-zinc-400">ईमेल</label>
+          <input id="login-email" required type="email" placeholder="name@example.com" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400">पासवर्ड</label>
+          <input id="login-pass" required type="password" placeholder="••••••••" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-sm mt-1 focus:outline-none focus:border-red-500 text-white">
+        </div>
+        <button type="submit" id="login-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg text-sm transition mt-2">साइन इन</button>
+      </form>
+      <p class="text-xs text-zinc-400 text-center mt-4">
+        नया अकाउंट चाहिए? <button onclick="switchToRegister()" class="text-red-400 hover:underline">रजिस्टर करें</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- MODAL: UPLOAD VIDEO (Protected) -->
+  <div id="upload-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white">नया वीडियो अपलोड करें</h3>
+        <button onclick="closeModal('upload-modal')" class="text-zinc-400 hover:text-white">✕</button>
+      </div>
+      <form onsubmit="handleUpload(event)" class="space-y-3">
+        <div>
+          <label class="text-xs text-zinc-400">वीडियो का शीर्षक (Title)</label>
+          <input id="vid-title" required type="text" placeholder="उदा. Class 10 Science Chapter 1" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm mt-1 text-white focus:outline-none focus:border-red-500">
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400">YouTube Video Link या ID</label>
+          <input id="vid-url" required type="text" placeholder="https://youtu.be/... या ID" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm mt-1 text-white focus:outline-none focus:border-red-500">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs text-zinc-400">केटेगरी</label>
+            <select id="vid-category" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm mt-1 text-white focus:outline-none">
+              <option value="Education">Education (शिक्षा)</option>
+              <option value="Technology">Technology</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Music">Music</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-zinc-400">विजिबिलिटी (Privacy)</label>
+            <select id="vid-visibility" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm mt-1 text-white focus:outline-none">
+              <option value="public">🌐 Public (सभी देखें)</option>
+              <option value="private">🔒 Private (सिर्फ मैं)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400">विवरण (Description)</label>
+          <textarea id="vid-desc" rows="2" placeholder="वीडियो के बारे में संक्षेप में लिखें..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm mt-1 text-white focus:outline-none"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('upload-modal')" class="px-4 py-2 text-xs text-zinc-400">रद्द करें</button>
+          <button type="submit" id="save-vid-btn" class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg text-sm font-semibold">अपलोड करें</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // 1. SUPABASE CREDENTIALS
+    // 1. SUPABASE INITIALIZATION
     const SUPABASE_URL = "https://gccvgzuimkxpfwpjpipd.supabase.co";
-    // अपनी कॉपी की हुई Key यहाँ डालें
-    const SUPABASE_KEY = "अपनी_PUBLISHABLE_KEY_यहाँ_पेस्ट_करें";
+    const SUPABASE_KEY = "sb_publishable_vrmkCl4lnY7S6IchLKJn2g_7084y..."; // अपनी कॉपी की हुई की यहाँ डालें
 
-    let supabaseClient = null;
-    try {
-      if (window.supabase && SUPABASE_KEY !== "अपनी_PUBLISHABLE_KEY_यहाँ_पेस्ट_करें") {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      }
-    } catch (e) {
-      console.warn("Supabase Init Warning:", e);
-    }
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Modal Controls
-    const modal = document.getElementById('upload-modal');
-    document.getElementById('open-modal-btn').addEventListener('click', () => modal.classList.remove('hidden'));
-    document.getElementById('close-modal-btn').addEventListener('click', () => modal.classList.add('hidden'));
+    // Global App State
+    let currentUser = JSON.parse(localStorage.getItem('mytube_session') || 'null');
+    let allVideos = [];
+    let currentFilter = 'ALL';
+    let currentTab = 'public'; // 'public', 'mine', 'users_mgr'
 
-    // Extract YouTube ID
+    // Init App
+    window.addEventListener('DOMContentLoaded', () => {
+      renderNav();
+      fetchVideos();
+    });
+
+    // YouTube ID Extractor
     function extractYouTubeID(url) {
       if (!url) return '';
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -96,58 +233,283 @@
       return (match && match[2].length === 11) ? match[2] : url.trim();
     }
 
-    // Load Videos
-    async function loadVideos() {
-      const grid = document.getElementById('video-grid');
-      let videos = [];
+    // Modal Helpers
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function switchToLogin() { closeModal('register-modal'); openModal('login-modal'); }
+    function switchToRegister() { closeModal('login-modal'); openModal('register-modal'); }
 
-      // 1. Try Supabase first
-      if (supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient.from('videos').select('*').order('created_at', { ascending: false });
-          if (!error && data) videos = data;
-        } catch (err) {
-          console.warn("Supabase fetch failed, falling back to local:", err);
+    // RENDER NAVIGATION & BUTTONS
+    function renderNav() {
+      const nav = document.getElementById('nav-actions');
+      const adminBadge = document.getElementById('admin-badge');
+      const tabMine = document.getElementById('tab-mine');
+      const tabAdmin = document.getElementById('tab-admin');
+      const interestBanner = document.getElementById('interest-banner');
+
+      if (currentUser) {
+        const isAdmin = currentUser.role === 'admin';
+        if (isAdmin) adminBadge.classList.remove('hidden');
+        tabMine.classList.remove('hidden');
+        if (isAdmin) tabAdmin.classList.remove('hidden');
+
+        // Show User Interests in banner
+        if (currentUser.interests && currentUser.interests.length > 0) {
+          interestBanner.classList.remove('hidden');
+          document.getElementById('user-interest-tags').innerText = currentUser.interests.join(', ');
         }
-      }
 
-      // 2. If Supabase fails or empty, fetch Local Storage backup
-      if (videos.length === 0) {
-        const local = localStorage.getItem('mytube_videos');
-        if (local) {
-          videos = JSON.parse(local);
-        } else {
-          // Default test video
-          videos = [{
-            youtube_id: 'dQw4w9WgXcQ',
-            title: 'Welcome to MyTube (Demo Video)',
-            description: 'Yeh custom video sharing platform ka pehla video hai.',
-            views: 12
-          }];
-        }
-      }
+        nav.innerHTML = `
+          <button onclick="openModal('upload-modal')" class="bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-cloud-arrow-up"></i> अपलोड
+          </button>
+          <div class="flex items-center gap-2 bg-zinc-800/80 px-3 py-1 rounded-full border border-zinc-700 text-xs">
+            <span class="w-2 h-2 rounded-full ${isAdmin ? 'bg-purple-400' : 'bg-green-400'}"></span>
+            <span class="font-medium max-w-[100px] truncate">${currentUser.name}</span>
+            <button onclick="handleLogout()" title="लॉगआउट" class="text-zinc-400 hover:text-red-400 ml-1"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+          </div>
+        `;
+      } else {
+        adminBadge.classList.add('hidden');
+        tabMine.classList.add('hidden');
+        tabAdmin.classList.add('hidden');
+        interestBanner.classList.add('hidden');
 
-      renderVideos(videos);
+        nav.innerHTML = `
+          <button onclick="openModal('login-modal')" class="text-xs text-zinc-300 hover:text-white px-3 py-1.5 font-medium">लॉगिन</button>
+          <button onclick="openModal('register-modal')" class="bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-full text-xs font-semibold">
+            अकाउंट बनाएँ
+          </button>
+        `;
+      }
     }
 
-    function renderVideos(videos) {
-      const grid = document.getElementById('video-grid');
-      if (videos.length === 0) {
-        grid.innerHTML = '<p class="text-zinc-500 col-span-full">अभी कोई वीडियो नहीं है। ऊपर दिए बटन से पहला वीडियो जोड़ें!</p>';
+    // AUTH: REGISTER USER
+    async function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim().toLowerCase();
+      const password = document.getElementById('reg-pass').value.trim();
+      const checkboxes = document.querySelectorAll('input[name="interest"]:checked');
+      const interests = Array.from(checkboxes).map(c => c.value);
+
+      if (interests.length === 0) {
+        alert("कृपया कम से कम एक इंटरेस्ट चुनें!");
         return;
       }
 
-      grid.innerHTML = videos.map(v => `
-        <div onclick="playVideo('${v.youtube_id}', '${encodeURIComponent(v.title || '')}', '${encodeURIComponent(v.description || '')}')" class="group cursor-pointer">
-          <div class="aspect-video bg-zinc-800 rounded-xl overflow-hidden relative border border-zinc-800 group-hover:border-zinc-600 transition shadow">
-            <img src="${v.thumbnail_url || 'https://img.youtube.com/vi/' + v.youtube_id + '/hqdefault.jpg'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-          </div>
-          <h3 class="font-semibold text-sm mt-2 line-clamp-2 text-zinc-100 group-hover:text-red-400 transition">${v.title}</h3>
-          <p class="text-xs text-zinc-500 mt-1">${v.views || 1} views • अभी</p>
-        </div>
-      `).join('');
+      const btn = document.getElementById('reg-btn');
+      btn.innerText = "अकाउंट बन रहा है...";
+      btn.disabled = true;
+
+      const { data, error } = await supabase.from('app_users').insert([
+        { name, email, password, interests, role: 'user' }
+      ]).select().single();
+
+      btn.innerText = "अकाउंट तैयार करें";
+      btn.disabled = false;
+
+      if (error) {
+        alert("रजिस्ट्रेशन एरर: " + error.message);
+      } else {
+        alert("अकाउंट सफलतापूर्वक बन गया! अब आप वीडियो अपलोड कर सकते हैं।");
+        currentUser = data;
+        localStorage.setItem('mytube_session', JSON.stringify(data));
+        closeModal('register-modal');
+        renderNav();
+        fetchVideos();
+      }
     }
 
+    // AUTH: LOGIN
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const password = document.getElementById('login-pass').value.trim();
+      const btn = document.getElementById('login-btn');
+
+      btn.innerText = "चेक हो रहा है...";
+      btn.disabled = true;
+
+      const { data, error } = await supabase.from('app_users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      btn.innerText = "साइन इन";
+      btn.disabled = false;
+
+      if (error || !data) {
+        alert("गलत ईमेल या पासवर्ड!");
+      } else {
+        currentUser = data;
+        localStorage.setItem('mytube_session', JSON.stringify(data));
+        closeModal('login-modal');
+        renderNav();
+        fetchVideos();
+      }
+    }
+
+    function handleLogout() {
+      if (confirm("क्या आप लॉगआउट करना चाहते हैं?")) {
+        localStorage.removeItem('mytube_session');
+        currentUser = null;
+        switchView('public');
+        renderNav();
+        fetchVideos();
+      }
+    }
+
+    // UPLOAD VIDEO (Protected)
+    async function handleUpload(e) {
+      e.preventDefault();
+      if (!currentUser) {
+        alert("वीडियो अपलोड करने के लिए पहले लॉगिन या अकाउंट बनाएँ!");
+        openModal('register-modal');
+        return;
+      }
+
+      const title = document.getElementById('vid-title').value.trim();
+      const rawUrl = document.getElementById('vid-url').value.trim();
+      const category = document.getElementById('vid-category').value;
+      const visibility = document.getElementById('vid-visibility').value;
+      const description = document.getElementById('vid-desc').value.trim();
+      const ytId = extractYouTubeID(rawUrl);
+
+      if (!ytId) {
+        alert("अमान्य YouTube URL!");
+        return;
+      }
+
+      const btn = document.getElementById('save-vid-btn');
+      btn.innerText = "सेव हो रहा है...";
+      btn.disabled = true;
+
+      const { error } = await supabase.from('videos').insert([{
+        user_id: currentUser.id,
+        title,
+        description,
+        youtube_id: ytId,
+        category,
+        visibility,
+        thumbnail_url: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+        views: 1
+      }]);
+
+      btn.innerText = "अपलोड करें";
+      btn.disabled = false;
+
+      if (error) {
+        alert("अपलोड एरर: " + error.message);
+      } else {
+        alert("वीडियो सफलतापूर्वक जोड़ दिया गया!");
+        closeModal('upload-modal');
+        document.getElementById('vid-title').value = '';
+        document.getElementById('vid-url').value = '';
+        document.getElementById('vid-desc').value = '';
+        fetchVideos();
+      }
+    }
+
+    // FETCH VIDEOS & RE-ORDER BY USER INTERESTS
+    async function fetchVideos() {
+      const grid = document.getElementById('video-grid');
+      grid.innerHTML = '<p class="text-zinc-500 col-span-full">वीडियो लोड हो रहे हैं...</p>';
+
+      const { data, error } = await supabase.from('videos')
+        .select('*, app_users(name, role)')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        grid.innerHTML = `<p class="text-red-400 col-span-full">डेटा लोड एरर: ${error.message}</p>`;
+        return;
+      }
+
+      allVideos = data || [];
+      renderFeed();
+    }
+
+    // FILTER & RENDER LOGIC
+    function renderFeed() {
+      const grid = document.getElementById('video-grid');
+      const usersPanel = document.getElementById('admin-users-panel');
+
+      if (currentTab === 'users_mgr') {
+        grid.classList.add('hidden');
+        usersPanel.classList.remove('hidden');
+        loadAdminUsers();
+        return;
+      } else {
+        grid.classList.remove('hidden');
+        usersPanel.classList.add('hidden');
+      }
+
+      let displayList = [];
+      const isAdmin = currentUser && currentUser.role === 'admin';
+
+      if (currentTab === 'mine') {
+        // Show current user's videos (Public + Private)
+        displayList = allVideos.filter(v => v.user_id === currentUser.id);
+      } else {
+        // Public View: Admins can see all public videos; regular users only see public videos
+        displayList = allVideos.filter(v => v.visibility === 'public');
+
+        // SMART INTEREST RANKING: अगर यूज़र लॉग इन है, तो उसके इंटरेस्ट वाले वीडियो सबसे ऊपर आएँगे
+        if (currentUser && currentUser.interests && currentUser.interests.length > 0) {
+          const userTags = currentUser.interests;
+          displayList.sort((a, b) => {
+            const aMatch = userTags.includes(a.category) ? 1 : 0;
+            const bMatch = userTags.includes(b.category) ? 1 : 0;
+            return bMatch - aMatch; // इंटरेस्ट वाले वीडियो पहले
+          });
+        }
+      }
+
+      // Apply Category Filter Pill
+      if (currentFilter !== 'ALL') {
+        displayList = displayList.filter(v => v.category === currentFilter);
+      }
+
+      if (displayList.length === 0) {
+        grid.innerHTML = '<p class="text-zinc-500 col-span-full py-8 text-center">यहाँ कोई वीडियो उपलब्ध नहीं है।</p>';
+        return;
+      }
+
+      grid.innerHTML = displayList.map(v => {
+        const canDelete = isAdmin || (currentUser && currentUser.id === v.user_id);
+        const isPrivate = v.visibility === 'private';
+
+        return `
+          <div class="group relative bg-zinc-900 border border-zinc-800/80 rounded-xl overflow-hidden hover:border-zinc-700 transition flex flex-col justify-between">
+            <div onclick="playVideo('${v.youtube_id}', '${encodeURIComponent(v.title)}', '${encodeURIComponent(v.description || '')}')" class="cursor-pointer">
+              <div class="aspect-video bg-zinc-950 overflow-hidden relative">
+                <img src="${v.thumbnail_url}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                <span class="absolute bottom-2 right-2 bg-black/80 text-[10px] px-1.5 py-0.5 rounded font-mono">${v.category}</span>
+                ${isPrivate ? '<span class="absolute top-2 left-2 bg-amber-500/90 text-black font-bold text-[10px] px-2 py-0.5 rounded shadow"><i class="fa-solid fa-lock"></i> Private</span>' : ''}
+              </div>
+              <div class="p-3">
+                <h3 class="font-semibold text-sm line-clamp-2 text-zinc-100 group-hover:text-red-400 transition">${v.title}</h3>
+                <div class="flex items-center justify-between text-xs text-zinc-400 mt-2">
+                  <span>${v.app_users?.name || 'Creator'}</span>
+                  <span>${v.views} views</span>
+                </div>
+              </div>
+            </div>
+
+            ${canDelete ? `
+              <div class="px-3 pb-3 pt-0 flex justify-end">
+                <button onclick="deleteVideo('${v.id}')" class="text-xs text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 px-2 py-1 rounded border border-red-800/40 transition">
+                  <i class="fa-solid fa-trash"></i> ${isAdmin && v.user_id !== currentUser?.id ? 'डिलीट (Admin)' : 'डिलीट'}
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // PLAY VIDEO
     function playVideo(ytId, encTitle, encDesc) {
       const container = document.getElementById('player-container');
       const player = document.getElementById('main-player');
@@ -158,60 +520,89 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Save Video Button Handler
-    document.getElementById('save-video-btn').addEventListener('click', async () => {
-      const title = document.getElementById('new-title').value.trim();
-      const rawUrl = document.getElementById('new-url').value.trim();
-      const desc = document.getElementById('new-desc').value.trim();
-      const saveBtn = document.getElementById('save-video-btn');
+    function closePlayer() {
+      const container = document.getElementById('player-container');
+      const player = document.getElementById('main-player');
+      player.src = '';
+      container.classList.add('hidden');
+    }
 
-      if (!title || !rawUrl) {
-        alert("कृपया टाइटल और URL दोनों भरें!");
+    // DELETE VIDEO (Admin or Owner)
+    async function deleteVideo(vidId) {
+      if (!confirm("क्या आप वाकई इस वीडियो को हमेशा के लिए हटाना चाहते हैं?")) return;
+
+      const { error } = await supabase.from('videos').delete().eq('id', vidId);
+      if (error) {
+        alert("डिलीट एरर: " + error.message);
+      } else {
+        alert("वीडियो सफलतापूर्वक हटा दिया गया!");
+        fetchVideos();
+      }
+    }
+
+    // ADMIN: LOAD USERS
+    async function loadAdminUsers() {
+      const tbody = document.getElementById('users-table-body');
+      tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-zinc-500">यूज़र्स लोड हो रहे हैं...</td></tr>';
+
+      const { data, error } = await supabase.from('app_users').select('*').order('created_at', { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-red-400">त्रुटि: ${error.message}</td></tr>`;
         return;
       }
 
-      const ytId = extractYouTubeID(rawUrl);
-      const thumbnail = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+      document.getElementById('total-users').innerText = `कुल: ${data.length} यूज़र्स`;
 
-      saveBtn.innerText = "सेव हो रहा है...";
-      saveBtn.disabled = true;
+      tbody.innerHTML = data.map(u => `
+        <tr class="hover:bg-zinc-800/40">
+          <td class="p-3 font-semibold text-white">${u.name}</td>
+          <td class="p-3 text-zinc-400">${u.email}</td>
+          <td class="p-3"><span class="px-2 py-0.5 text-xs rounded ${u.role === 'admin' ? 'bg-purple-900 text-purple-300' : 'bg-zinc-800 text-zinc-300'}">${u.role}</span></td>
+          <td class="p-3 text-xs text-zinc-400">${(u.interests || []).join(', ') || '-'}</td>
+          <td class="p-3 text-right">
+            ${u.role !== 'admin' ? `
+              <button onclick="deleteUserAccount('${u.id}')" class="text-xs bg-red-950/60 hover:bg-red-900 text-red-300 px-2.5 py-1 rounded border border-red-800 transition">
+                अकाउंट डिलीट करें
+              </button>
+            ` : '<span class="text-xs text-zinc-500">संरक्षित (Admin)</span>'}
+          </td>
+        </tr>
+      `).join('');
+    }
 
-      const newVideoObj = {
-        title: title,
-        description: desc,
-        youtube_id: ytId,
-        thumbnail_url: thumbnail,
-        views: 1,
-        created_at: new Date().toISOString()
-      };
+    // ADMIN: DELETE USER
+    async function deleteUserAccount(userId) {
+      if (!confirm("चेतावनी: यूज़र अकाउंट डिलीट करने से उनके सभी अपलोड किए गए वीडियो भी हमेशा के लिए हट जाएँगे। क्या आप जारी रखना चाहते हैं?")) return;
 
-      // 1. Save to Supabase if connected
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('videos').insert([newVideoObj]);
-        } catch (e) {
-          console.warn("Supabase insert error:", e);
-        }
+      const { error } = await supabase.from('app_users').delete().eq('id', userId);
+      if (error) {
+        alert("एरर: " + error.message);
+      } else {
+        alert("यूज़र और उनका सारा डेटा हटा दिया गया!");
+        loadAdminUsers();
+        fetchVideos();
       }
+    }
 
-      // 2. Always save to Local Storage as instant cache
-      const local = JSON.parse(localStorage.getItem('mytube_videos') || '[]');
-      local.unshift(newVideoObj);
-      localStorage.setItem('mytube_videos', JSON.stringify(local));
+    // VIEW & FILTER TOGGLES
+    function switchView(view) {
+      currentTab = view;
+      document.getElementById('tab-public').className = (view === 'public') ? 'bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium' : 'bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg';
+      document.getElementById('tab-mine').className = (view === 'mine') ? 'bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium' : 'bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg';
+      document.getElementById('tab-admin').className = (view === 'users_mgr') ? 'bg-purple-600 text-white px-3 py-1.5 rounded-lg font-medium' : 'bg-purple-900/60 border border-purple-500/50 text-purple-200 px-3 py-1.5 rounded-lg';
+      renderFeed();
+    }
 
-      // Reset Form & UI
-      document.getElementById('new-title').value = '';
-      document.getElementById('new-url').value = '';
-      document.getElementById('new-desc').value = '';
-      modal.classList.add('hidden');
-      saveBtn.innerText = "सेव करें";
-      saveBtn.disabled = false;
-
-      loadVideos();
-    });
-
-    // Initial Load
-    loadVideos();
+    function filterCategory(cat) {
+      currentFilter = cat;
+      document.querySelectorAll('.cat-pill').forEach(btn => {
+        btn.classList.remove('bg-zinc-800', 'text-white', 'border-red-500');
+        btn.classList.add('bg-zinc-900', 'border-zinc-800');
+      });
+      event.target.classList.add('bg-zinc-800', 'text-white');
+      renderFeed();
+    }
   </script>
 </body>
 </html>
